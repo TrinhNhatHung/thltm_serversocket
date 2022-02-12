@@ -8,7 +8,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
@@ -43,36 +45,41 @@ class ProcessData extends Thread {
 		this.socket = socket;
 	}
 	
-	public List<List<Integer>> handle(int t, int n, int m) {
+	public static List<List<Integer>> handle(int t, int n, int m) {
 		List<List<Integer>> result = new ArrayList<>();
 		List<Integer> lecturerIndexes = new ArrayList<>();
 		for (int i=1; i<=n; i++) {
 			lecturerIndexes.add(i);
 		}
 		Collections.shuffle(lecturerIndexes);
-		List<String> checkClasses = new ArrayList<>();
+		Set<String> checkClasses = new HashSet<>();
+		Set<String> checkLectureTogether = new HashSet<>();
 		while (t>0) {
 			t--;
 			List<Integer> session = new ArrayList<>();
-			boolean[] kt = new boolean[n+1];
+			boolean[] isLectureArranged = new boolean[n+1];
 			for (int classIndex=1; classIndex<=m; classIndex++) {
+				Integer firstLectureIndex = -1;
 				for (Integer lectureIndex : lecturerIndexes) {
 					String s = lectureIndex + "," + classIndex;
-					if (!kt[lectureIndex] && !checkClasses.contains(s)) {
+					if (!isLectureArranged[lectureIndex] && !checkClasses.contains(s)) {
 						checkClasses.add(s);
 						session.add(lectureIndex);
-						kt[lectureIndex]=true;
+						isLectureArranged[lectureIndex] = true;
+						firstLectureIndex = lectureIndex;
 						break;
 					}
 				}
 				for (Integer lectureIndex : lecturerIndexes) {
 					String s = lectureIndex + "," + classIndex;
-					if (!kt[lectureIndex] && !checkClasses.contains(s)) {
+					String lectureTogether = firstLectureIndex + "&" + lectureIndex;
+					if (!isLectureArranged[lectureIndex] && !checkClasses.contains(s) && !checkLectureTogether.contains(lectureTogether)) {
 						checkClasses.add(s);
+						checkLectureTogether.add(lectureTogether);
 						session.add(lectureIndex);
-						kt[lectureIndex]=true;
+						isLectureArranged[lectureIndex]=true;
 						break;
-					}	
+					}
 				}
 			}
 			result.add(session);
