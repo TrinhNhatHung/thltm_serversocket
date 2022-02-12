@@ -1,6 +1,5 @@
-package Server;
+package main;
 
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -9,51 +8,82 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-
-import javax.imageio.ImageIO;
 
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellUtil;
 import org.apache.poi.ss.util.NumberToTextConverter;
-import org.apache.poi.ss.util.SheetUtil;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import ToMau.TM;
-
-public class DanhSachServer {
+public class ProcessDataServer {
 
 	public static void main(String[] args) {
 		try {
-			ServerSocket server = new ServerSocket(4000);
+			ServerSocket socketServer = new ServerSocket(4000);
 			while (true) {
-				Socket soc = server.accept();
-				new Xulydanhsach(soc).run();
+				Socket soc = socketServer.accept();
+				new ProcessData(soc).run();
 			}
 		} catch (Exception e) {
-			// TODO: handle exception
+			System.out.println(e.getMessage());
 		}
 	}
 
 }
 
-class Xulydanhsach extends Thread {
-	Socket soc;
+class ProcessData extends Thread {
+	Socket socket;
 
-	public Xulydanhsach(Socket s) {
-		this.soc = s;
+	public ProcessData(Socket socket) {
+		this.socket = socket;
+	}
+	
+	public List<List<Integer>> handle(int t, int n, int m) {
+		List<List<Integer>> result = new ArrayList<>();
+		List<Integer> lecturerIndexes = new ArrayList<>();
+		for (int i=1; i<=n; i++) {
+			lecturerIndexes.add(i);
+		}
+		Collections.shuffle(lecturerIndexes);
+		List<String> checkClasses = new ArrayList<>();
+		while (t>0) {
+			t--;
+			List<Integer> session = new ArrayList<>();
+			boolean[] kt = new boolean[n+1];
+			for (int classIndex=1; classIndex<=m; classIndex++) {
+				for (Integer lectureIndex : lecturerIndexes) {
+					String s = lectureIndex + "," + classIndex;
+					if (!kt[lectureIndex] && !checkClasses.contains(s)) {
+						checkClasses.add(s);
+						session.add(lectureIndex);
+						kt[lectureIndex]=true;
+						break;
+					}
+				}
+				for (Integer lectureIndex : lecturerIndexes) {
+					String s = lectureIndex + "," + classIndex;
+					if (!kt[lectureIndex] && !checkClasses.contains(s)) {
+						checkClasses.add(s);
+						session.add(lectureIndex);
+						kt[lectureIndex]=true;
+						break;
+					}	
+				}
+			}
+			result.add(session);
+			Collections.shuffle(lecturerIndexes);
+		}
+		return result;
 	}
 
 	public void run() {
 		try {
-			System.out.println("Nhận dữ liệu:");
-			DataInputStream dis = new DataInputStream(soc.getInputStream());
+			DataInputStream dis = new DataInputStream(socket.getInputStream());
 			byte[] pc, gs;
 			XSSFWorkbook gv = null, pt = null;
 
@@ -62,7 +92,6 @@ class Xulydanhsach extends Thread {
 
 			int length = dis.readInt();
 			if (length > 0) {
-				// System.out.println(length);
 				byte[] bytes = new byte[length];
 				dis.readFully(bytes, 0, length);
 				ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
@@ -80,11 +109,7 @@ class Xulydanhsach extends Thread {
 				System.out.println(pt.getSheetAt(0).getLastRowNum());
 			}
 
-			List<List<Integer>> ds = TM.xuly(n, gv.getSheetAt(0).getLastRowNum(), pt.getSheetAt(0).getLastRowNum());
-//			for (List<Integer> list : ds) {
-//				System.out.println(list);
-//				System.out.println(list.size());
-//			}
+			List<List<Integer>> ds = handle(n, gv.getSheetAt(0).getLastRowNum(), pt.getSheetAt(0).getLastRowNum());
 
 			XSSFWorkbook dspc = new XSSFWorkbook();
 			XSSFWorkbook dsgs = new XSSFWorkbook();
@@ -107,7 +132,7 @@ class Xulydanhsach extends Thread {
 				mergedRegion = new CellRangeAddress(0, 1, 1, 1);
 				sheet.addMergedRegion(mergedRegion);
 				cell = row.createCell(1);
-				cell.setCellValue("Mã GV");
+				cell.setCellValue("Ma GV");
 				CellUtil.setCellStyleProperty(cell, CellUtil.VERTICAL_ALIGNMENT, VerticalAlignment.CENTER);
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
@@ -115,32 +140,32 @@ class Xulydanhsach extends Thread {
 				sheet.addMergedRegion(mergedRegion);
 				sheet.setColumnWidth(2, 8000);
 				cell = row.createCell(2);
-				cell.setCellValue("Họ và tên");
+				cell.setCellValue("Ho va ten");
 				CellUtil.setCellStyleProperty(cell, CellUtil.VERTICAL_ALIGNMENT, VerticalAlignment.CENTER);
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 				mergedRegion = new CellRangeAddress(0, 0, 3, 4);
 				sheet.addMergedRegion(mergedRegion);
 				cell = row.createCell(3);
-				cell.setCellValue("Giám thị");
+				cell.setCellValue("Giam thi");
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 				mergedRegion = new CellRangeAddress(0, 1, 5, 5);
 				sheet.addMergedRegion(mergedRegion);
 				sheet.setColumnWidth(5, 3000);
 				cell = row.createCell(5);
-				cell.setCellValue("Phòng Thi");
+				cell.setCellValue("Phong thi");
 				CellUtil.setCellStyleProperty(cell, CellUtil.VERTICAL_ALIGNMENT, VerticalAlignment.CENTER);
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 				row = sheet.createRow(++rowCount);
 				sheet.setColumnWidth(3, 3000);
 				cell = row.createCell(3);
-				cell.setCellValue("Giám thị 1");
+				cell.setCellValue("Giam thi 1");
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 				sheet.setColumnWidth(4, 3000);
 				cell = row.createCell(4);
-				cell.setCellValue("Giám thị 2");
+				cell.setCellValue("Giam thi 2");
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 				//
 				int stt = 0;
@@ -151,11 +176,11 @@ class Xulydanhsach extends Thread {
 					CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 					cell = row.createCell(1);
-					cell.setCellValue(xuat(gv.getSheetAt(0).getRow(i).getCell(3)));
+					cell.setCellValue(xuat(gv.getSheetAt(0).getRow(i).getCell(1)));
 					CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 					cell = row.createCell(2);
-					cell.setCellValue(xuat(gv.getSheetAt(0).getRow(i).getCell(1)));
+					cell.setCellValue(xuat(gv.getSheetAt(0).getRow(i).getCell(2)));
 					CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 					if (stt % 2 != 0) {
@@ -173,27 +198,25 @@ class Xulydanhsach extends Thread {
 					CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 				}
 
-				// Danh sach giam sat
 				sheet = dsgs.createSheet("Ca thi " + numsheet);
 				rowCount = -1;
 				row = sheet.createRow(++rowCount);
-				// set up header for sheet
 				cell = row.createCell(0);
 				cell.setCellValue("STT");
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 				cell = row.createCell(1);
-				cell.setCellValue("Mã GV");
+				cell.setCellValue("Ma GV");
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 				sheet.setColumnWidth(2, 8000);
 				cell = row.createCell(2);
-				cell.setCellValue("Họ và tên");
+				cell.setCellValue("Ho va ten");
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 				sheet.setColumnWidth(3, 8000);
 				cell = row.createCell(3);
-				cell.setCellValue("Phòng thi");
+				cell.setCellValue("Phong thi");
 				CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 				int a = gv.getSheetAt(0).getLastRowNum();
@@ -219,7 +242,7 @@ class Xulydanhsach extends Thread {
 					
 					u++;
 					if (u>b) u=1;
-					String s="Từ "+xuat(pt.getSheetAt(0).getRow(u).getCell(1))+" đến ";
+					String s="Tá»« "+xuat(pt.getSheetAt(0).getRow(u).getCell(1))+" Ä‘áº¿n ";
 					u=u+bn-1;
 					if (u>b) u=b;
 					s+=xuat(pt.getSheetAt(0).getRow(u).getCell(1));
@@ -236,7 +259,7 @@ class Xulydanhsach extends Thread {
 			dsgs.write(baos2);
 			gs = baos2.toByteArray();
 
-			DataOutputStream dos = new DataOutputStream(soc.getOutputStream());
+			DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 			dos.writeInt(pc.length);
 			dos.write(pc);
 			System.out.println(pc.length);
@@ -246,7 +269,7 @@ class Xulydanhsach extends Thread {
 		} catch (
 
 		Exception e) {
-			// TODO: handle exception
+			System.out.println(e.getMessage());
 		}
 	}
 
