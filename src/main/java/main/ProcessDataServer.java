@@ -233,16 +233,16 @@ class ProcessData extends Thread {
 					CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 					cell = row.createCell(1);
-					cell.setCellValue(xuat(gv.getSheetAt(0).getRow(i).getCell(3)));
+					cell.setCellValue(xuat(gv.getSheetAt(0).getRow(i).getCell(1)));
 					CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 
 					cell = row.createCell(2);
-					cell.setCellValue(xuat(gv.getSheetAt(0).getRow(i).getCell(1)));
+					cell.setCellValue(xuat(gv.getSheetAt(0).getRow(i).getCell(2)));
 					CellUtil.setCellStyleProperty(cell, CellUtil.ALIGNMENT, HorizontalAlignment.CENTER);
 					
 					u++;
 					if (u>b) u=1;
-					String s="Tá»« "+xuat(pt.getSheetAt(0).getRow(u).getCell(1))+" Ä‘áº¿n ";
+					String s="Từ "+xuat(pt.getSheetAt(0).getRow(u).getCell(1))+" đến ";
 					u=u+bn-1;
 					if (u>b) u=b;
 					s+=xuat(pt.getSheetAt(0).getRow(u).getCell(1));
